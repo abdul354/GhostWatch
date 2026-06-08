@@ -1,30 +1,55 @@
-# SaaS Landing page design
+# GhostWatch — Marine Conservation Tactical Dashboard
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+A small Next.js + Tailwind CSS dashboard prototype for monitoring marine conservation missions.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/rajs-projects-a7283d3f/v0-landing-page-design)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/v0WVoU3xC7U)
+## Tech stack
 
-## Overview
+- Next.js
+- React
+- Tailwind CSS
+- Framer Motion
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+## Quick start
 
-## Deployment
+Prerequisites: Node.js (18+ recommended) and npm (or pnpm/yarn).
 
-Your project is live at:
+Install dependencies:
 
-**[https://vercel.com/rajs-projects-a7283d3f/v0-landing-page-design](https://vercel.com/rajs-projects-a7283d3f/v0-landing-page-design)**
+```bash
+npm install
+```
 
-## Build your app
+Run the development server:
 
-Continue building your app on:
+```bash
+npm run dev
+```
 
-**[https://v0.app/chat/v0WVoU3xC7U](https://v0.app/chat/v0WVoU3xC7U)**
+Open http://localhost:3000 in your browser.
 
-## How It Works
+Build for production:
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+```bash
+npm run build
+npm start
+```
+
+## Project structure (relevant files)
+
+- `app/page.tsx` — main page that composes the site layout.
+- `components/ui/ascii-art.tsx` — the ASCII penguin component.
+- `components/ui/navbar.tsx` — navbar where the ASCII penguin is rendered as the logo.
+- `components/sections/features-section.tsx` — contains the “Active Operations” label and the `Mission Brief Dashboard` heading.
+
+## Quick tips
+
+- To edit the penguin art, modify `components/ui/ascii-art.tsx` (it uses a `<pre>` with monospace font to preserve spacing).
+- To change the navbar logo spacing/size, edit `components/ui/navbar.tsx`.
+- The `Mission Brief Dashboard` heading uses Tailwind classes — switch `font-mono` → `font-sans` and add `tracking-tight` for proportional font with tight letter spacing.
+
+## Development notes
+
+- The site uses Tailwind utility classes for styling. Run your editor's Tailwind IntelliSense for class suggestions.
+- When running the dev server, Next.js logs the local URL (http://localhost:3000).
+
+If you want, I can add more documentation (design tokens, deployment steps, test commands). Tell me what to include.
