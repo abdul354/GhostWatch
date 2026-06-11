@@ -39,7 +39,7 @@ npm start
 - `app/page.tsx` — main page that composes the site layout.
 - `components/ui/ascii-art.tsx` — the ASCII penguin component.
 - `components/ui/navbar.tsx` — navbar where the ASCII penguin is rendered as the logo.
-- `components/sections/features-section.tsx` — contains the “Active Operations” label and the `Mission Brief Dashboard` heading.
+- `components/sections/features-section.tsx` — contains the "Active Operations" label and the `Mission Brief Dashboard` heading.
 
 ## Quick tips
 

@@ -1,13 +1,13 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ReportGhostGearForm } from "@/components/forms/report-ghost-gear-form"
+import { GearReportForm } from "@/components/forms/gear-report-form"
 
 export function ReportSection() {
   return (
     <section
       id="report"
-      className="px-6 py-24 bg-black border-b border-white"
+      className="px-6 py-24 bg-black border-b border-neutral-800"
     >
       <div className="max-w-2xl mx-auto">
         {/* Section Header */}
@@ -16,7 +16,7 @@ export function ReportSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12 pb-8 border-b border-white"
+          className="text-center mb-12 pb-8 border-b border-neutral-800"
         >
           <p className="text-sm font-medium text-neutral-400 uppercase tracking-wider mb-4 font-mono">
             Take Action
@@ -31,7 +31,7 @@ export function ReportSection() {
         </motion.div>
 
         {/* Form */}
-        <ReportGhostGearForm />
+        <GearReportForm />
       </div>
     </section>
   )

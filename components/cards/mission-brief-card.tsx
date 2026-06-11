@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { AlertCircle, MapPin, Clock, Send } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +20,29 @@ interface MissionBriefCardProps {
   delay?: number
 }
 
+const fetchIQSpeciesData = async (lat: number, lon: number) => {
+  try {
+    const response = await fetch(
+      `https://api.obis.org/v3/occurrence?lat=${lat}&lon=${lon}&radius=50000&redlist=true&size=3`
+    )
+
+    if (!response.ok) return ["Unknown Species"]
+
+    const data = await response.json()
+
+    if (data.results && data.results.length > 0) {
+      return data.results
+        .map((record: { species?: string; scientificName?: string }) => record.species || record.scientificName)
+        .filter(Boolean)
+    }
+
+    return ["General Marine Wildlife"]
+  } catch (error) {
+    console.error("Web IQ (OBIS) Fetch Failed:", error)
+    return ["Data unavailable"]
+  }
+}
+
 export function MissionBriefCard({
   id,
   urgency,
@@ -29,13 +53,32 @@ export function MissionBriefCard({
   description,
   delay = 0,
 }: MissionBriefCardProps) {
+  const [atRiskSpecies, setAtRiskSpecies] = useState("QUERYING OBIS DB...")
+
   const urgencyConfig = {
-    High: { color: "bg-destructive text-destructive-foreground", label: "CRITICAL" },
-    Medium: { color: "border-2 border-white bg-transparent text-white", label: "ACTIVE" },
-    Low: { color: "border border-neutral-400 bg-transparent text-neutral-400", label: "MONITOR" },
+    High: { color: "border border-neutral-800 bg-transparent text-red-500", label: "HIGH" },
+    Medium: { color: "border border-neutral-800 bg-transparent text-white", label: "ACTIVE" },
+    Low: { color: "border border-neutral-800 bg-transparent text-neutral-400", label: "MONITOR" },
   }
 
   const config = urgencyConfig[urgency]
+
+  useEffect(() => {
+    let isMounted = true
+
+    const runIQLookup = async () => {
+      const speciesList = await fetchIQSpeciesData(coordinates.latitude, coordinates.longitude)
+      if (isMounted) {
+        setAtRiskSpecies(speciesList[0] ?? "Data unavailable")
+      }
+    }
+
+    void runIQLookup()
+
+    return () => {
+      isMounted = false
+    }
+  }, [coordinates.latitude, coordinates.longitude])
 
   return (
     <motion.div
@@ -44,10 +87,10 @@ export function MissionBriefCard({
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay }}
     >
-      <div className="group h-full overflow-hidden border border-white bg-transparent hover:border-neutral-400 transition-all duration-300">
+      <div className="group h-full overflow-hidden border border-neutral-800 bg-transparent hover:border-neutral-700 transition-all duration-300">
         <div className="p-6 flex flex-col h-full">
           {/* Header with Urgency Badge */}
-          <div className="flex items-start justify-between mb-4 pb-3 border-b border-white">
+          <div className="flex items-start justify-between mb-4 pb-3 border-b border-neutral-800">
             <div className="flex-1">
               <h3 className="font-bold text-white text-sm leading-tight mb-1 uppercase tracking-tight">{missionTitle}</h3>
               {description && <p className="text-neutral-400 text-xs font-mono">{description}</p>}
@@ -66,8 +109,8 @@ export function MissionBriefCard({
           </div>
 
           {/* Mission ID */}
-          <div className="mb-4 pb-3 border-b border-white">
-            <p className="text-xs text-neutral-400 font-mono tracking-wide">MISSION ID: <span className="font-bold text-white">{id}</span></p>
+          <div className="mb-4 pb-3 border-b border-neutral-800">
+            <p className="text-xs text-neutral-400 font-mono tracking-wide">TARGET ID: <span className="font-bold text-white">{id}</span></p>
           </div>
 
           {/* GPS Coordinates Section */}
@@ -76,7 +119,7 @@ export function MissionBriefCard({
               <MapPin className="w-4 h-4 text-white" />
               <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">GPS Coordinates</p>
             </div>
-            <div className="bg-transparent border border-white p-3">
+            <div className="bg-transparent border border-neutral-800 p-3">
               <div className="grid grid-cols-2 gap-3">
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
@@ -106,22 +149,26 @@ export function MissionBriefCard({
 
           {/* IQ Intelligence Section */}
           <motion.div
-            className="mb-4 bg-transparent border border-white p-3"
+            className="mb-4 relative left-1 top-1 bg-black border border-neutral-800 border-t-neutral-600 p-3"
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: delay + 0.3 }}
           >
-            <p className="text-xs font-bold text-white uppercase tracking-widest mb-2">IQ Intelligence</p>
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-white" />
-              <p className="text-xs font-mono text-neutral-400">Species at Risk: <span className="text-white">{species}</span></p>
+            <p className="text-xs font-bold text-white uppercase tracking-[0.35em] mb-3">
+              [ IQ ALIGN: OBIS BIODIVERSITY DB ]
+            </p>
+            <div className="flex items-center gap-2 text-xs font-mono tracking-[0.2em] uppercase text-neutral-400">
+              <span className="text-white">&gt;</span>
+              <span>
+                Species at Risk: <span className="text-white">{atRiskSpecies}</span>
+              </span>
             </div>
           </motion.div>
 
           {/* Days Adrift Counter */}
           <motion.div
-            className="mb-4 bg-transparent border border-white p-3"
+            className="mb-4 bg-transparent border border-neutral-800 p-3"
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -129,7 +176,7 @@ export function MissionBriefCard({
           >
             <div className="flex items-center gap-2 mb-1">
               <Clock className="w-4 h-4 text-white" />
-              <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Days Adrift</p>
+              <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Gap Duration</p>
             </div>
             <motion.p
               className="font-mono text-2xl font-bold text-white"
@@ -138,6 +185,7 @@ export function MissionBriefCard({
             >
               {daysAdrift}
             </motion.p>
+            <p className="mt-1 text-xs font-mono text-neutral-500 uppercase tracking-widest">Days</p>
           </motion.div>
 
           {/* Dispatch Crew Button */}
@@ -149,7 +197,7 @@ export function MissionBriefCard({
             transition={{ duration: 0.4, delay: delay + 0.4 }}
           >
             <Button
-              className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold uppercase text-xs tracking-wider border-0"
+              className="w-full bg-black hover:bg-neutral-950 text-white font-bold uppercase text-xs tracking-wider border border-neutral-800"
               size="lg"
             >
               <Send className="w-4 h-4 mr-2" />

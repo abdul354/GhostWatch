@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+from datetime import date
+from typing import Any
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field, model_validator
+
+from drift_calculator import calculate_drift_path
+from gfw_query import get_ais_gaps
+
+
+class DriftRequest(BaseModel):
+    start_latitude: float = Field(..., ge=-90.0, le=90.0)
+    start_longitude: float = Field(..., ge=-180.0, le=180.0)
+    current_u_m_s: float = Field(..., description="East-west current component in m/s")
+    current_v_m_s: float = Field(..., description="North-south current component in m/s")
+    hours: float = Field(..., gt=0)
+    step_hours: float = Field(1.0, gt=0)
+
+
+class AISGapRequest(BaseModel):
+    min_lat: float = Field(..., ge=-90.0, le=90.0)
+    max_lat: float = Field(..., ge=-90.0, le=90.0)
+    min_lon: float = Field(..., ge=-180.0, le=180.0)
+    max_lon: float = Field(..., ge=-180.0, le=180.0)
+    start_date: date
+    end_date: date
+    limit: int = Field(5, ge=1, le=50)
+    use_mock: bool = True
+
+    @model_validator(mode="after")
+    def validate_logic(self) -> "AISGapRequest":
+        if self.min_lat >= self.max_lat:
+            raise ValueError("min_lat must be strictly less than max_lat")
+        if self.min_lon >= self.max_lon:
+            raise ValueError("min_lon must be strictly less than max_lon")
+        if self.start_date >= self.end_date:
+            raise ValueError("start_date must be before end_date")
+        return self
+
+
+app = FastAPI(title="GhostWatch Tools API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
+
+@app.get("/health")
+def health_check() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.post("/drift")
+def drift_endpoint(payload: DriftRequest) -> dict[str, Any]:
+    try:
+        return calculate_drift_path(
+            start_latitude=payload.start_latitude,
+            start_longitude=payload.start_longitude,
+            current_u_m_s=payload.current_u_m_s,
+            current_v_m_s=payload.current_v_m_s,
+            hours=payload.hours,
+            step_hours=payload.step_hours,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/ais-gaps")
+def ais_gaps_endpoint(payload: AISGapRequest) -> list[dict[str, Any]]:
+    try:
+        return get_ais_gaps(
+            min_lat=payload.min_lat,
+            max_lat=payload.max_lat,
+            min_lon=payload.min_lon,
+            max_lon=payload.max_lon,
+            start_date=payload.start_date,
+            end_date=payload.end_date,
+            limit=payload.limit,
+            use_mock=payload.use_mock,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
