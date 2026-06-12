@@ -4,6 +4,11 @@
 
 A Next.js + FastAPI dashboard for monitoring marine conservation missions. Tracks ghost gear sightings, AIS vessel gaps, and OBIS species data in near-real-time.
 
+## Layout
+
+- `frontend/` - Next.js dashboard app
+- `backend/` - FastAPI API, drift utilities, and tests
+
 ## Tech stack
 
 **Frontend:** Next.js, React, Tailwind CSS, Framer Motion
@@ -14,17 +19,21 @@ A Next.js + FastAPI dashboard for monitoring marine conservation missions. Track
 
 Prerequisites: Node.js (18+), Python 3.10+, npm or pnpm.
 
-### Frontend
+### Frontend (`frontend/`)
 
 ```bash
+cd frontend
 npm install
 npm run dev
 ```
 Open http://localhost:3000 in your browser.
 
-### Backend
+### Backend (`backend/`)
 
 ```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 python3 -m uvicorn main:app --host 127.0.0.1 --port 8000
 ```
@@ -34,18 +43,18 @@ The frontend gracefully falls back to mock data when the backend is offline.
 ## Project structure
 
 ```
-app/
-  page.tsx                  — main page layout
-components/
-  cards/mission-brief-card.tsx   — mission card with OBIS species data
-  forms/gear-report-form.tsx     — field report form for ghost gear sightings
-  sections/features-section.tsx  — AIS gap dashboard (calls /ais-gaps)
-  sections/report-section.tsx    — hosts the gear report form
-  ui/                          — shadcn/ui component library
-main.py                   — FastAPI app: /health, /drift, /ais-gaps
-drift_calculator.py       — ocean drift path projection
-gfw_query.py              — AIS gap detection (mock fallback when no GFW key)
-requirements.txt          — Python dependencies
+frontend/
+  app/                      — Next.js app router entrypoints
+  components/               — UI sections, cards, and forms
+  public/                   — static assets
+  next.config.mjs           — Next.js configuration
+  package.json              — frontend scripts and dependencies
+backend/
+  main.py                   — FastAPI app: /health, /drift, /drift-demo, /ais-gaps
+  drift_calculator.py       — ocean drift path projection
+  gfw_query.py              — AIS gap detection (mock fallback when no GFW key)
+  requirements.txt          — Python dependencies
+  tests/                    — backend pytest suite
 ```
 
 ## API endpoints
@@ -72,7 +81,7 @@ requirements.txt          — Python dependencies
 ```
 
 Set `use_mock: false` and provide a `GFW_API_KEY` environment variable to query live GFW data.
-To enable Copernicus surface currents for `/drift`, create a `.env` (from `.env.example`) with `COPERNICUS_USERNAME` and `COPERNICUS_PASSWORD`, then restart the backend.
+To enable Copernicus surface currents for `/drift`, create `backend/.env` from `backend/.env.example` with `COPERNICUS_USERNAME` and `COPERNICUS_PASSWORD`, then restart the backend.
 
 ## Development notes
 
@@ -80,4 +89,4 @@ To enable Copernicus surface currents for `/drift`, create a `.env` (from `.env.
 - OBIS species lookups run client-side (no API key required).
 - When running the dev server, Next.js logs the local URL (http://localhost:3000).
 - The backend CORS policy restricts origins to `localhost:3000` and `127.0.0.1:3000`.
- - To use live Copernicus currents: set `COPERNICUS_USERNAME` and `COPERNICUS_PASSWORD` in a local `.env` (see `.env.example`). If set, `/drift` will attempt to fetch surface currents for the given `start_date`; otherwise it falls back to a deterministic seeded mock for reproducible testing.
+- To use live Copernicus currents: set `COPERNICUS_USERNAME` and `COPERNICUS_PASSWORD` in `backend/.env` (see `backend/.env.example`). If set, `/drift` will attempt to fetch surface currents for the given `start_date`; otherwise it falls back to a deterministic seeded mock for reproducible testing.
