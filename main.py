@@ -112,6 +112,28 @@ def ais_gaps_endpoint(payload: AISGapRequest) -> list[dict[str, Any]]:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
+@app.get("/drift-demo")
+def drift_demo() -> dict[str, Any]:
+    """Return a short seeded mock drift for quick local verification.
+
+    This endpoint does not require credentials and is intended for quick
+    smoke-testing the drift path pipeline. It uses the deterministic seeded
+    mock currents for reproducibility.
+    """
+    from datetime import date
+
+    demo = calculate_drift_path_with_copernicus(
+        start_latitude=15.0,
+        start_longitude=85.0,
+        when=date(2026, 6, 1),
+        hours=24.0,
+        step_hours=6.0,
+        fallback_to_mock=True,
+    )
+
+    return {"demo": True, "drift": demo}
+
+
 if __name__ == "__main__":
     import uvicorn
 

@@ -1,5 +1,7 @@
 # GhostWatch — Marine Conservation Tactical Dashboard
 
+[![CI](https://github.com/abdul354/GhostWatch/actions/workflows/ci.yml/badge.svg)](https://github.com/abdul354/GhostWatch/actions/workflows/ci.yml)
+
 A Next.js + FastAPI dashboard for monitoring marine conservation missions. Tracks ghost gear sightings, AIS vessel gaps, and OBIS species data in near-real-time.
 
 ## Tech stack
