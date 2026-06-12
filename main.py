@@ -1,23 +1,29 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
 
-from drift_calculator import calculate_drift_path
+from drift_calculator import calculate_drift_path, calculate_drift_path_with_copernicus
 from gfw_query import get_ais_gaps
 
 
 class DriftRequest(BaseModel):
     start_latitude: float = Field(..., ge=-90.0, le=90.0)
     start_longitude: float = Field(..., ge=-180.0, le=180.0)
-    current_u_m_s: float = Field(..., description="East-west current component in m/s")
-    current_v_m_s: float = Field(..., description="North-south current component in m/s")
+    # If provided, these explicit current components will be used instead of
+    # querying Copernicus (or falling back to the seeded mock).
+    current_u_m_s: Optional[float] = Field(None, description="East-west current component in m/s")
+    current_v_m_s: Optional[float] = Field(None, description="North-south current component in m/s")
+    # Date for which to query Copernicus surface currents. Defaults to today.
+    start_date: date = Field(default_factory=date.today)
     hours: float = Field(..., gt=0)
     step_hours: float = Field(1.0, gt=0)
+    # When Copernicus is unavailable, fall back to deterministic mock currents.
+    fallback_to_mock: bool = True
 
 
 class AISGapRequest(BaseModel):
@@ -63,16 +69,30 @@ def health_check() -> dict[str, str]:
 @app.post("/drift")
 def drift_endpoint(payload: DriftRequest) -> dict[str, Any]:
     try:
-        return calculate_drift_path(
+        # If explicit current components were supplied, use them.
+        if payload.current_u_m_s is not None and payload.current_v_m_s is not None:
+            return calculate_drift_path(
+                start_latitude=payload.start_latitude,
+                start_longitude=payload.start_longitude,
+                current_u_m_s=payload.current_u_m_s,
+                current_v_m_s=payload.current_v_m_s,
+                hours=payload.hours,
+                step_hours=payload.step_hours,
+            )
+
+        # Otherwise, attempt Copernicus (with deterministic fallback).
+        return calculate_drift_path_with_copernicus(
             start_latitude=payload.start_latitude,
             start_longitude=payload.start_longitude,
-            current_u_m_s=payload.current_u_m_s,
-            current_v_m_s=payload.current_v_m_s,
+            when=payload.start_date,
             hours=payload.hours,
             step_hours=payload.step_hours,
+            fallback_to_mock=payload.fallback_to_mock,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.post("/ais-gaps")

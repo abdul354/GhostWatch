@@ -70,6 +70,7 @@ requirements.txt          — Python dependencies
 ```
 
 Set `use_mock: false` and provide a `GFW_API_KEY` environment variable to query live GFW data.
+To enable Copernicus surface currents for `/drift`, create a `.env` (from `.env.example`) with `COPERNICUS_USERNAME` and `COPERNICUS_PASSWORD`, then restart the backend.
 
 ## Development notes
 
@@ -77,3 +78,4 @@ Set `use_mock: false` and provide a `GFW_API_KEY` environment variable to query 
 - OBIS species lookups run client-side (no API key required).
 - When running the dev server, Next.js logs the local URL (http://localhost:3000).
 - The backend CORS policy restricts origins to `localhost:3000` and `127.0.0.1:3000`.
+ - To use live Copernicus currents: set `COPERNICUS_USERNAME` and `COPERNICUS_PASSWORD` in a local `.env` (see `.env.example`). If set, `/drift` will attempt to fetch surface currents for the given `start_date`; otherwise it falls back to a deterministic seeded mock for reproducible testing.

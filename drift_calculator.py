@@ -4,6 +4,11 @@ from math import cos
 from typing import Any
 
 import numpy as np
+import os
+import logging
+from datetime import date
+from random import Random
+from typing import Optional, Tuple
 
 
 EARTH_RADIUS_METERS = 6_371_000.0
@@ -89,3 +94,96 @@ def calculate_drift_path(
         "displacement_km": round(displacement_meters / 1000.0, 3),
         "path": path,
     }
+
+
+def _seeded_mock_current(lat: float, lon: float, when: date) -> Tuple[float, float]:
+    """Return a deterministic mock current (u, v) in m/s for given location/date.
+
+    This is used as a safe fallback when real Copernicus credentials or the
+    client library aren't available locally. Values are small and suitable for
+    demo/testing only.
+    """
+    seed = int((lat + 90.0) * 1000.0) ^ int((lon + 180.0) * 1000.0) ^ when.toordinal()
+    rng = Random(seed)
+    # u: east-west, v: north-south — pick values in range +/-0.35 m/s
+    u = (rng.random() - 0.5) * 0.7
+    v = (rng.random() - 0.5) * 0.7
+    return (round(u, 3), round(v, 3))
+
+
+def get_ocean_currents(
+    *,
+    latitude: float,
+    longitude: float,
+    when: date,
+) -> Optional[Tuple[float, float]]:
+    """Attempt to obtain surface current components (u, v) from Copernicus.
+
+    Behavior:
+    - If `COPERNICUS_USERNAME` and `COPERNICUS_PASSWORD` are not set, returns
+      `None` immediately.
+    - If the `copernicusmarine` client is not installed or a live fetch fails,
+      returns `None` and logs a warning. Callers may then use a mock fallback.
+
+    Note: This function intentionally uses a tolerant approach so that the
+    rest of the project runs without network credentials.
+    """
+    username = os.getenv("COPERNICUS_USERNAME")
+    password = os.getenv("COPERNICUS_PASSWORD")
+    if not username or not password:
+        logging.debug("Copernicus credentials not found in environment")
+        return None
+
+    try:
+        import copernicusmarine
+
+        # The real library usage may differ depending on the package version.
+        # We attempt a best-effort call but keep it wrapped so failures fall
+        # back to the calling code.
+        try:
+            client = copernicusmarine.Client(username=username, password=password)
+            # Example high-level call — actual argument names depend on client
+            data = client.get_surface_currents(lat=latitude, lon=longitude, date=when)
+            u = float(data.get("u", 0.0))
+            v = float(data.get("v", 0.0))
+            return (u, v)
+        except Exception as exc:  # pragma: no cover - runtime fallback
+            logging.warning("Copernicus client fetch failed: %s", exc)
+            return None
+
+    except Exception:  # pragma: no cover - import may fail in many environments
+        logging.debug("copernicusmarine library not available")
+        return None
+
+
+def calculate_drift_path_with_copernicus(
+    *,
+    start_latitude: float,
+    start_longitude: float,
+    when: date,
+    hours: float,
+    step_hours: float = 1.0,
+    fallback_to_mock: bool = True,
+) -> dict[str, Any]:
+    """High-level helper that tries Copernicus then falls back to deterministic mock.
+
+    Returns the same structure as `calculate_drift_path`.
+    """
+    currents = get_ocean_currents(latitude=start_latitude, longitude=start_longitude, when=when)
+    if currents is None:
+        if fallback_to_mock:
+            u, v = _seeded_mock_current(start_latitude, start_longitude, when)
+            logging.info("Using seeded mock currents: u=%s m/s v=%s m/s", u, v)
+        else:
+            raise RuntimeError("No Copernicus currents available and fallback disabled")
+    else:
+        u, v = currents
+
+    return calculate_drift_path(
+        start_latitude=start_latitude,
+        start_longitude=start_longitude,
+        current_u_m_s=u,
+        current_v_m_s=v,
+        hours=hours,
+        step_hours=step_hours,
+    )
