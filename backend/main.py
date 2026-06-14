@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from drift_calculator import calculate_drift_path, calculate_drift_path_with_copernicus
 from gfw_query import get_ais_gaps
+from reasoning_agent import build_reasoning_brief
 
 
 class DriftRequest(BaseModel):
@@ -45,6 +46,10 @@ class AISGapRequest(BaseModel):
         if self.start_date >= self.end_date:
             raise ValueError("start_date must be before end_date")
         return self
+
+
+class ReasoningBriefRequest(AISGapRequest):
+    limit: int = Field(3, ge=1, le=10)
 
 
 app = FastAPI(title="GhostWatch Tools API")
@@ -99,6 +104,23 @@ def drift_endpoint(payload: DriftRequest) -> dict[str, Any]:
 def ais_gaps_endpoint(payload: AISGapRequest) -> list[dict[str, Any]]:
     try:
         return get_ais_gaps(
+            min_lat=payload.min_lat,
+            max_lat=payload.max_lat,
+            min_lon=payload.min_lon,
+            max_lon=payload.max_lon,
+            start_date=payload.start_date,
+            end_date=payload.end_date,
+            limit=payload.limit,
+            use_mock=payload.use_mock,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/reasoning-brief")
+def reasoning_brief_endpoint(payload: ReasoningBriefRequest) -> dict[str, Any]:
+    try:
+        return build_reasoning_brief(
             min_lat=payload.min_lat,
             max_lat=payload.max_lat,
             min_lon=payload.min_lon,

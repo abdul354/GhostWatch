@@ -52,6 +52,12 @@ export function Navbar() {
         </Link>
         <div className="flex items-center gap-4">
           <Link
+            href="#reasoning"
+            className="px-3 py-2 text-xs font-bold text-white transition-all border border-white hover:bg-white hover:text-black"
+          >
+            AGENT
+          </Link>
+          <Link
             href="#report"
             className="px-3 py-2 text-xs font-bold text-white transition-all border border-white hover:bg-white hover:text-black"
           >
