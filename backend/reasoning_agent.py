@@ -4,6 +4,7 @@ from datetime import date
 from typing import Any, Literal
 
 from drift_calculator import calculate_drift_path_with_copernicus
+from foundry_agent import generate_foundry_plan
 from gfw_query import get_ais_gaps
 
 
@@ -47,6 +48,7 @@ def build_reasoning_brief(
     end_date: date,
     limit: int = 3,
     use_mock: bool = True,
+    use_foundry: bool = True,
 ) -> dict[str, Any]:
     """Build a deterministic mission brief from AIS gaps and drift projection.
 
@@ -125,9 +127,9 @@ def build_reasoning_brief(
         else "No AIS gaps were found for this operating window."
     )
 
-    return {
+    brief = {
         "agent": "GhostWatch Reasoning Agent",
-        "mode": "deterministic",
+        "mode": "foundry-ready deterministic fallback",
         "summary": summary,
         "operating_window": {
             "start_date": start_date.isoformat(),
@@ -146,6 +148,23 @@ def build_reasoning_brief(
             "The structured brief can be passed to Azure AI Foundry for natural-language planning.",
         ],
     }
+
+    if use_foundry:
+        brief["foundry"] = generate_foundry_plan(brief)
+    else:
+        brief["foundry"] = {
+            "status": {
+                "provider": "Azure AI Foundry",
+                "state": "disabled",
+                "configured": False,
+                "deployment": "not requested",
+                "details": "Foundry handoff was disabled for this request.",
+            },
+            "source": "local deterministic fallback",
+            "plan": "Foundry handoff disabled. Local ranking is still available.",
+        }
+
+    return brief
 
 
 def _recommended_action(priority: Priority, vessel_type: str) -> str:

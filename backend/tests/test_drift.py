@@ -37,7 +37,8 @@ def test_reasoning_brief_ranks_incidents():
     )
 
     assert brief["agent"] == "GhostWatch Reasoning Agent"
-    assert brief["mode"] == "deterministic"
+    assert brief["mode"] == "foundry-ready deterministic fallback"
+    assert brief["foundry"]["status"]["provider"] == "Azure AI Foundry"
     assert len(brief["incidents"]) == 3
     assert brief["incidents"][0]["risk_score"] >= brief["incidents"][1]["risk_score"]
     assert brief["incidents"][0]["recommended_action"]

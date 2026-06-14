@@ -36,6 +36,17 @@ interface ReasoningBrief {
   summary: string
   incidents: IncidentBrief[]
   api_notes: string[]
+  foundry?: {
+    status: {
+      provider: string
+      state: string
+      configured: boolean
+      deployment: string
+      details: string
+    }
+    source: string
+    plan: string
+  }
 }
 
 const API_URL = "http://127.0.0.1:8000/reasoning-brief"
@@ -49,6 +60,7 @@ const REQUEST_BODY = {
   end_date: "2026-06-07",
   limit: 3,
   use_mock: true,
+  use_foundry: true,
 }
 
 const FALLBACK_BRIEF: ReasoningBrief = {
@@ -91,6 +103,17 @@ const FALLBACK_BRIEF: ReasoningBrief = {
     "Backend offline: showing deterministic fallback brief.",
     "Connect Azure AI Foundry after the structured reasoning contract is stable.",
   ],
+  foundry: {
+    status: {
+      provider: "Azure AI Foundry",
+      state: "handoff-ready",
+      configured: false,
+      deployment: "not configured",
+      details: "No Foundry key is required for local demo mode.",
+    },
+    source: "local deterministic fallback",
+    plan: "Prioritize Sea Lantern as a critical response. Recommended next step: dispatch recovery crew and request vessel identity review.",
+  },
 }
 
 function priorityClass(priority: IncidentBrief["priority"]) {
@@ -259,9 +282,19 @@ export function ReasoningSection() {
               </div>
               <div className="mt-5 border-t border-neutral-800 pt-4">
                 <p className="font-mono text-xs uppercase tracking-[0.3em] text-neutral-500">
-                  API Mode
+                  Foundry Agent
                 </p>
-                <p className="mt-2 font-mono text-sm text-white">{brief.mode}</p>
+                <p className="mt-2 font-mono text-sm text-white">
+                  {brief.foundry?.status.provider ?? "Azure AI Foundry"} /{" "}
+                  {brief.foundry?.status.state ?? brief.mode}
+                </p>
+                <p className="mt-3 font-mono text-xs leading-6 text-neutral-400">
+                  {brief.foundry?.plan ??
+                    "Structured brief is ready for Azure AI Foundry planning."}
+                </p>
+                <p className="mt-3 font-mono text-[11px] uppercase tracking-widest text-neutral-600">
+                  Source: {brief.foundry?.source ?? "structured reasoning brief"}
+                </p>
               </div>
             </div>
           </div>

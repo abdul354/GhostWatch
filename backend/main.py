@@ -6,10 +6,13 @@ from typing import Any, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
+from dotenv import load_dotenv
 
 from drift_calculator import calculate_drift_path, calculate_drift_path_with_copernicus
 from gfw_query import get_ais_gaps
 from reasoning_agent import build_reasoning_brief
+
+load_dotenv()
 
 
 class DriftRequest(BaseModel):
@@ -50,6 +53,7 @@ class AISGapRequest(BaseModel):
 
 class ReasoningBriefRequest(AISGapRequest):
     limit: int = Field(3, ge=1, le=10)
+    use_foundry: bool = True
 
 
 app = FastAPI(title="GhostWatch Tools API")
@@ -129,6 +133,7 @@ def reasoning_brief_endpoint(payload: ReasoningBriefRequest) -> dict[str, Any]:
             end_date=payload.end_date,
             limit=payload.limit,
             use_mock=payload.use_mock,
+            use_foundry=payload.use_foundry,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
