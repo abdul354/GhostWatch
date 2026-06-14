@@ -101,15 +101,15 @@ const FALLBACK_BRIEF: ReasoningBrief = {
   ],
   api_notes: [
     "Backend offline: showing deterministic fallback brief.",
-    "Connect Azure AI Foundry after the structured reasoning contract is stable.",
+    "Azure AI Foundry integration is installed with local fallback mode.",
   ],
   foundry: {
     status: {
       provider: "Azure AI Foundry",
-      state: "handoff-ready",
+      state: "local-fallback",
       configured: false,
       deployment: "not configured",
-      details: "No Foundry key is required for local demo mode.",
+      details: "Foundry integration is installed. Local fallback is active until credentials are configured.",
     },
     source: "local deterministic fallback",
     plan: "Prioritize Sea Lantern as a critical response. Recommended next step: dispatch recovery crew and request vessel identity review.",

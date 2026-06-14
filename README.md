@@ -48,7 +48,7 @@ Risk scoring rules
 Ranked intervention brief
 ```
 
-The current reasoning layer is deterministic by design. That means judges and teammates can run the demo reliably without cloud quota or paid API keys. The backend also includes an optional Azure AI Foundry handoff: when Foundry environment variables are present, the same structured `/reasoning-brief` can be sent to a model deployment for natural-language mission planning.
+The current reasoning layer is deterministic by design. That means judges and teammates can run the demo reliably without cloud quota or paid API keys. The backend also includes a credential-gated Azure AI Foundry integration: when Foundry environment variables are present, the same structured `/reasoning-brief` is sent to a model deployment for natural-language mission planning.
 
 ## Architecture
 
@@ -72,7 +72,7 @@ backend/
 | Frontend | Next.js, React, Tailwind CSS, Framer Motion, Lucide |
 | Backend | FastAPI, Pydantic, NumPy, Pytest |
 | Data signals | AIS/GFW-style vessel gaps, Copernicus-style drift currents, OBIS biodiversity |
-| Agent layer | Deterministic reasoning brief, optional Azure AI Foundry planning handoff |
+| Agent layer | Deterministic reasoning brief, Azure AI Foundry planning integration with local fallback |
 
 ## Quick Start
 
@@ -187,7 +187,7 @@ Example output shape:
 
 ## Optional Live Data
 
-GhostWatch runs without external credentials. For richer live integrations, copy `backend/.env.example` to `backend/.env` and add credentials:
+GhostWatch runs without external credentials because each cloud integration has a local fallback. For richer live integrations, copy `backend/.env.example` to `backend/.env` and add credentials:
 
 ```env
 COPERNICUS_USERNAME=""
@@ -203,7 +203,7 @@ Current behavior:
 
 ## Azure AI Foundry Integration
 
-The reasoning endpoint already returns a structured agent brief and a Foundry integration status. With no keys configured, it stays in local fallback mode. With Foundry variables configured, the backend can call an Azure AI Foundry model deployment for narrative planning:
+The reasoning endpoint returns a structured agent brief and a Foundry integration status. With no keys configured, the Foundry integration reports `local-fallback` and keeps the demo working. With Foundry variables configured, the backend calls an Azure AI Foundry model deployment for narrative planning:
 
 ```text
 /reasoning-brief response
@@ -215,7 +215,7 @@ Crew-ready natural language intervention plan
 
 Foundry IQ can be added later for document-grounded context such as marine protection policies, cleanup SOPs, local harbor contacts, or incident reports.
 
-Optional Foundry variables live in `backend/.env.example`:
+Foundry variables live in `backend/.env.example`:
 
 ```env
 AZURE_AI_FOUNDRY_ENDPOINT=""
@@ -250,9 +250,9 @@ npm run build
 | Mock AIS data | Working |
 | Drift projection | Working |
 | OBIS lookup | Working client-side |
-| Live GFW integration | Planned |
-| Azure AI Foundry model layer | Optional handoff integrated |
-| Foundry IQ knowledge grounding | Planned |
+| Live GFW integration | Credential-gated fallback path |
+| Azure AI Foundry model layer | Integrated with local fallback |
+| Foundry IQ knowledge grounding | Next extension |
 
 ## Submission Pitch
 

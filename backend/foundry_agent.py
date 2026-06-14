@@ -19,13 +19,13 @@ def get_foundry_status() -> dict[str, Any]:
 
     return {
         "provider": "Azure AI Foundry",
-        "state": "connected" if configured else "handoff-ready",
+        "state": "connected" if configured else "local-fallback",
         "configured": configured,
         "deployment": required["deployment"] or "not configured",
         "details": (
             "Foundry environment variables are configured."
             if configured
-            else "No Foundry key is required for local demo mode. Add endpoint, deployment, API version, and key to enable cloud planning."
+            else "Foundry integration is installed. Local fallback is active until endpoint, deployment, API version, and key are configured."
         ),
     }
 
